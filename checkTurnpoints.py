@@ -22,6 +22,8 @@ def parseFlight(file):
                 continue
             elif line[:5] == 'HFFXA':
                 accuracy = int(line[5:8])
+            elif line[:5] == 'HFDTE':
+                date = line[5:-1]
     except IOError as e:
         print('Trouble with the file')
         print(e)
@@ -30,18 +32,23 @@ def parseFlight(file):
         print(e)
     finally:
         file.close()
-    return points, accuracy
+    return points, accuracy, date
     
 def parseDirectory(directory):
+    if directory[-1] != '/':
+        directory += '/'
+    print('Reading directory '+directory+' ...')
     _,_, files = next(os.walk(directory))
     files = [f for f in files if f[-3:] == 'igc']
     points = []
+    dates = [(0,0)]
     acc=0
     for filename in files:
-        p,a = parseFlight(directory+filename)
+        p,a,date = parseFlight(directory+filename)
         points += p
+        dates.append((len(points),date))
         acc = max(a,acc)
-    return points, acc
+    return points, acc, dates
     
 def parseTurnpoints(file):
     points = []
@@ -66,14 +73,15 @@ def parseTurnpoints(file):
         file.close()
     return points, names
     
-def checkTurnPoints(flight, turnpoints, tpnames,acc):
+def checkTurnPoints(flight, turnpoints, tpnames,acc, dates):
     tree = KDTree(flight)
     print('Turnpoints:\n')
     for p, name in zip(turnpoints, tpnames):
         ans = tree.query(p)
         d = calcDistance(*p,*flight[ans[1]])
         if d < 1: #XXX Change this to correct value
-            print(name)
+            date = [x+1 for (x,((i,_),(j,_))) in enumerate(zip(dates[:-1],dates[1:])) if i<ans[1]<j][0]
+            print(dates[date][1], name)
 
 def calcDistance(lat1,lon1,lat2,lon2):
     r = 6371
@@ -94,14 +102,14 @@ def main():
     if len(sys.argv)>1:
         flightfile = sys.argv[1]
     else:
-        flightfile = input('Path to .igc file or to a folder')
+        flightfile = input('Path to .igc file or to a folder: ')
     if flightfile[-3:] == 'igc':
-        flight, acc = parseFlight(flightfile)
+        flight, acc, date = parseFlight(flightfile)
+        dates = [(0,0),(len(flight),date)]
     else:
-        print('Reading directory...:')
-        flight, acc = parseDirectory(flightfile)
+        flight, acc, dates = parseDirectory(flightfile)
     tps, tpnames = parseTurnpoints(tpsfile)
-    checkTurnPoints(flight, tps, tpnames, acc)
+    checkTurnPoints(flight, tps, tpnames, acc, dates)
 
 
     
