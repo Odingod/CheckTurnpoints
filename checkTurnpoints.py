@@ -89,13 +89,12 @@ def haversine(theta):
 
 
 def main():
-    tpsfile = input('Turnpointfile [pisteet.cup]: ')
+    tpsfile = input('Turnpoint file [pisteet.cup]: ')
     tpsfile = tpsfile if tpsfile else 'pisteet.cup'
     if len(sys.argv)>1:
         flightfile = sys.argv[1]
     else:
-        flightfile = input('Flight\n')
-    flightfile = flightfile if flightfile else 'F:/Antti/lento/logs/2016-06-13-XCS-AAA-01.igc'
+        flightfile = input('Path to .igc file or to a folder')
     if flightfile[-3:] == 'igc':
         flight, acc = parseFlight(flightfile)
     else:
